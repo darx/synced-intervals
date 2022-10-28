@@ -13,6 +13,7 @@ const test = new Queue([
     },
     interval: 5,
     immediate: true,
+    insight: true
   },
   {
     id: "test2",

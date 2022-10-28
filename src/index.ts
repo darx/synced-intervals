@@ -1,13 +1,26 @@
+type Enumerate<
+  N extends number,
+  Acc extends number[] = []
+> = Acc["length"] extends N
+  ? Acc[number]
+  : Enumerate<N, [...Acc, Acc["length"]]>;
+
+type IntRange<F extends number, T extends number> = Exclude<
+  Enumerate<T>,
+  Enumerate<F>
+>;
+
 interface Task {
   id: number | string;
   handler: Function;
   pending?: boolean;
-  interval?: any;
+  interval?: undefined | IntRange<1, 59>;
   immediate?: boolean;
   insight?: boolean;
 }
 
 class Queue {
+  private tracking: Array<number> = [];
   private running: boolean = false;
   private queue: Array<Task> = [];
   private interval: ReturnType<typeof setInterval>;
@@ -17,9 +30,13 @@ class Queue {
     this.start();
   }
 
-  private get seconds() {
+  private get seconds(): number {
     const now = new Date();
     return now.getSeconds();
+  }
+
+  private get now(): number {
+    return new Date().getTime()
   }
 
   private clock() {
@@ -30,20 +47,29 @@ class Queue {
     for (let i = 0; i < this.queue.length; i++) {
       const task: Task = this.queue[i];
 
-      const { id, handler, pending, interval } = task;
+      const { id, handler, pending, interval, insight } = task;
 
       if (pending === true) continue;
 
       if (typeof interval === "number" && time % interval !== 0) continue;
-      if (typeof interval === "undefined" && this.isPending(id)) continue;
+      if (typeof interval !== "number" && this.isPending(id)) continue;
 
       this.queue[i].pending = true;
+
+      const track = !insight ? null : this.now;
 
       const running = handler.apply(null, []);
 
       running.finally(() => {
         this.queue[i].pending = false;
-        if (typeof interval === "undefined") return this.remove(id);
+
+        if (track) this.tracking.unshift(this.now - track);
+
+        if (this.tracking.length >= 100) this.tracking.pop();
+
+        console.log(this.tracking);
+
+        if (!this.isInterval(task)) return this.remove(id);
       });
     }
   }
@@ -54,19 +80,24 @@ class Queue {
     for (let i = 0; i < val.length; i++) {
       const x = val[i];
 
-      if (x.interval > 59) {
-        val.splice(i, 1);
-        console.warn("Interval can't be greater than 59 seconds, not added to queue", x);
-        continue;
-      }
+      if (this.isInterval(x) && this.inQueue(x.id)) continue;
+
       if (x.immediate) x.handler.apply(null, []);
     }
 
     this.queue.push(...val);
   }
 
-  private isPending(id: number | string) {
+  private isPending(id: number | string): boolean {
     return this.queue.some((x) => x.id === id && x.pending);
+  }
+
+  private isInterval(x: Task): boolean {
+    return typeof x.interval === "number";
+  }
+
+  private inQueue(id: number | string): boolean {
+    return this.queue.some((x) => x.id === id);
   }
 
   remove(id: number | string) {
@@ -88,6 +119,10 @@ class Queue {
     setTimeout(() => {
       this.interval = setInterval(() => this.clock(), 1000);
     }, 1000 - milliseconds);
+  }
+
+  get pending(): Array<Task> {
+    return this.queue.filter((x) => x.pending);
   }
 }
 
