@@ -29,7 +29,6 @@ class Queue {
   private running: boolean = false;
   private queue: Array<Task> = [];
   private interval: ReturnType<typeof setInterval>;
-
   private events: Array<Event> = [];
 
   constructor(queue: Array<Task> = []) {
@@ -63,6 +62,10 @@ class Queue {
 
       this.queue[i].pending = true;
 
+      if (this.isEvent("pending")) {
+        this.emit("pending", this.pending);
+      }
+
       let track: number | null = !insight ? null : this.now;
 
       const running = handler.apply(null, []);
@@ -84,6 +87,10 @@ class Queue {
         .finally(() => {
           this.queue[i].pending = false;
 
+          if (this.isEvent("pending")) {
+            this.emit("pending", this.pending);
+          }
+
           if (track) this.tracking.unshift((this.now - Number(track)) / 1000);
 
           if (this.tracking.length >= 100) this.tracking.pop();
@@ -92,9 +99,37 @@ class Queue {
         });
     }
 
-    if (time % 15 === 0) {
+    if (this.isEvent("status") && time % 15 === 0) {
       this.emit("status", this.average(this.tracking));
-    }    
+    }
+  }
+
+  private emit(event: string, data: any) {
+    for (let i = 0; i < this.events.length; i++) {
+      if (event !== this.events[i].event) continue;
+      this.events[i].handler.apply(null, [data]);
+    }
+  }
+
+  private isPending(id: number | string): boolean {
+    return this.queue.some((x) => x.id === id && x.pending);
+  }
+
+  private isInterval(x: Task): boolean {
+    return typeof x.interval === "number";
+  }
+
+  private inQueue(id: number | string): boolean {
+    return this.queue.some((x) => x.id === id);
+  }
+
+  private isEvent(name: string): boolean {
+    return this.events.some((x) => x.event === name);
+  }
+
+  private average(arr: Array<number> = []): number {
+    const total = arr.reduce((acc, c) => acc + c, 0);
+    return total / arr.length;
   }
 
   set add(val: Task | Array<Task>) {
@@ -111,25 +146,12 @@ class Queue {
     this.queue.push(...val);
   }
 
-  private isPending(id: number | string): boolean {
-    return this.queue.some((x) => x.id === id && x.pending);
-  }
-
-  private isInterval(x: Task): boolean {
-    return typeof x.interval === "number";
-  }
-
-  private inQueue(id: number | string): boolean {
-    return this.queue.some((x) => x.id === id);
-  }
-
-  private average(arr: Array<number> = []): number {
-    const total = arr.reduce((acc, c) => acc + c, 0);
-    return total / arr.length;
-  }
-
   get insight(): number {
     return this.average(this.tracking);
+  }
+
+  get pending(): Array<Task> {
+    return this.queue.filter((x) => x.pending);
   }
 
   remove(id: number | string) {
@@ -153,19 +175,8 @@ class Queue {
     }, 1000 - milliseconds);
   }
 
-  get pending(): Array<Task> {
-    return this.queue.filter((x) => x.pending);
-  }
-
   on(event: string, handler: Function) {
     this.events.push({ event, handler });
-  }
-
-  private emit(event: string, data: any) {
-    for (let i = 0; i < this.events.length; i++) {
-      if (event !== this.events[i].event) continue;
-      this.events[i].handler.apply(null, [data]);
-    }
   }
 }
 
