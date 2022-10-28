@@ -13,7 +13,29 @@ const test = new Queue([
     },
     interval: 5,
     immediate: true,
-  }
+  },
+  {
+    id: "test2",
+    handler: () => {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(true);
+          console.log("test 2");
+        }, 3000);
+      });
+    }
+  },
+  {
+    id: "test2",
+    handler: () => {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(true);
+          console.log("test 2");
+        }, 3000);
+      });
+    }
+  },
 ]);
 
 // test.add = {
@@ -28,6 +50,6 @@ const test = new Queue([
 //   immediate: true,
 // };
 
-setTimeout(() => {
-  test.remove("test1");
-}, 60000);
+// setTimeout(() => {
+//   test.remove("test1");
+// }, 60000);

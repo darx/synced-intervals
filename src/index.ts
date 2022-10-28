@@ -41,24 +41,32 @@ class Queue {
 
       const running = handler.apply(null, []);
 
-      if (typeof interval === "undefined") return this.remove(id);
-
-      running.finally(() => (this.queue[i].pending = false));
+      running.finally(() => {
+        this.queue[i].pending = false;
+        if (typeof interval === "undefined") return this.remove(id);
+      });
     }
   }
 
   set add(val: Task | Array<Task>) {
     if (!Array.isArray(val)) val = [val];
 
-    val.forEach(x => {
+    for (let i = 0; i < val.length; i++) {
+      const x = val[i];
+
+      if (x.interval > 59) {
+        val.splice(i, 1);
+        console.warn("Interval can't be greater than 59 seconds, not added to queue", x);
+        continue;
+      }
       if (x.immediate) x.handler.apply(null, []);
-    });
+    }
 
     this.queue.push(...val);
   }
 
   private isPending(id: number | string) {
-    return this.queue.findIndex((x) => x.id === id) !== -1;
+    return this.queue.some((x) => x.id === id && x.pending);
   }
 
   remove(id: number | string) {
