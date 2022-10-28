@@ -1,0 +1,15 @@
+{
+  "name": "taskqueue",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "tsc": "tsc",
+    "watch": "tsc -w",
+    "test": "tsc -p test && node test/test.js"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.11.7",
+    "typescript": "^4.8.4"
+  }
+}
