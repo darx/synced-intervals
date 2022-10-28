@@ -19,11 +19,18 @@ interface Task {
   insight?: boolean;
 }
 
+interface Event {
+  event: string;
+  handler: Function;
+}
+
 class Queue {
   private tracking: Array<number> = [];
   private running: boolean = false;
   private queue: Array<Task> = [];
   private interval: ReturnType<typeof setInterval>;
+
+  private events: Array<Event> = [];
 
   constructor(queue: Array<Task> = []) {
     this.add = queue;
@@ -36,7 +43,7 @@ class Queue {
   }
 
   private get now(): number {
-    return new Date().getTime()
+    return new Date().getTime();
   }
 
   private clock() {
@@ -56,22 +63,38 @@ class Queue {
 
       this.queue[i].pending = true;
 
-      const track = !insight ? null : this.now;
+      let track: number | null = !insight ? null : this.now;
 
       const running = handler.apply(null, []);
 
-      running.finally(() => {
-        this.queue[i].pending = false;
+      running
+        .then((content: any) => {
+          content =
+            typeof content === "object"
+              ? JSON.stringify(content)
+              : String(content);
 
-        if (track) this.tracking.unshift(this.now - track);
+          const size = content.length;
+          const speed = size / ((this.now - Number(track)) / 1000) / 1024;
 
-        if (this.tracking.length >= 100) this.tracking.pop();
+          track = null;
 
-        console.log(this.tracking);
+          this.tracking.push(Number(speed.toFixed(4)));
+        })
+        .finally(() => {
+          this.queue[i].pending = false;
 
-        if (!this.isInterval(task)) return this.remove(id);
-      });
+          if (track) this.tracking.unshift((this.now - Number(track)) / 1000);
+
+          if (this.tracking.length >= 100) this.tracking.pop();
+
+          if (!this.isInterval(task)) return this.remove(id);
+        });
     }
+
+    if (time % 15 === 0) {
+      this.emit("status", this.average(this.tracking));
+    }    
   }
 
   set add(val: Task | Array<Task>) {
@@ -100,6 +123,15 @@ class Queue {
     return this.queue.some((x) => x.id === id);
   }
 
+  private average(arr: Array<number> = []): number {
+    const total = arr.reduce((acc, c) => acc + c, 0);
+    return total / arr.length;
+  }
+
+  get insight(): number {
+    return this.average(this.tracking);
+  }
+
   remove(id: number | string) {
     const index: number = this.queue.findIndex((x) => x.id === id);
     if (index === -1) return;
@@ -123,6 +155,17 @@ class Queue {
 
   get pending(): Array<Task> {
     return this.queue.filter((x) => x.pending);
+  }
+
+  on(event: string, handler: Function) {
+    this.events.push({ event, handler });
+  }
+
+  private emit(event: string, data: any) {
+    for (let i = 0; i < this.events.length; i++) {
+      if (event !== this.events[i].event) continue;
+      this.events[i].handler.apply(null, [data]);
+    }
   }
 }
 

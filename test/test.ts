@@ -1,14 +1,21 @@
+import "dotenv/config";
+
 declare var process: any;
 
 import Queue from "../src/index";
+
+import request from "./utils/request";
 
 const test = new Queue([
   {
     id: "test1",
     handler: () => {
-      return new Promise((resolve) => {
-        resolve(true);
-        console.log("test 1");
+      return new Promise((resolve, reject) => {
+        request({
+          url: process.env.TEST_FETCH_LINK
+        })
+        .catch((err: void) => reject(err))
+        .then((data: void) => resolve(data));
       });
     },
     interval: 5,
@@ -38,6 +45,10 @@ const test = new Queue([
     }
   },
 ]);
+
+test.on("status", (data: any) => {
+  console.log("status", data);
+})
 
 // test.add = {
 //   id: "test1",
