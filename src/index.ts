@@ -72,6 +72,8 @@ class Queue {
 
       running
         .then((content: any) => {
+          if (!insight) return;
+
           content =
             typeof content === "object"
               ? JSON.stringify(content)
@@ -91,8 +93,8 @@ class Queue {
             this.emit("pending", this.pending);
           }
 
-          if (track) this.tracking.unshift((this.now - Number(track)) / 1000);
-
+          if (insight && track)
+            this.tracking.unshift((this.now - Number(track)) / 1000);
           if (this.tracking.length >= 100) this.tracking.pop();
 
           if (!this.isInterval(task)) return this.remove(id);
@@ -139,7 +141,6 @@ class Queue {
       const x = val[i];
 
       if (this.isInterval(x) && this.inQueue(x.id)) continue;
-
       if (x.immediate) x.handler.apply(null, []);
     }
 
