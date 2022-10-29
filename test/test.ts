@@ -54,18 +54,13 @@ test.on("status", (data: any) => {
   console.log("status", data);
 })
 
-// test.add = {
-//   id: "test1",
-//   handler: () => {
-//     return new Promise((resolve) => {
-//       resolve(true);
-//       console.log("test 1");
-//     });
-//   },
-//   interval: 5,
-//   immediate: true,
-// };
-
-// setTimeout(() => {
-//   test.remove("test1");
-// }, 60000);
+test.add = {
+  id: "test1",
+  handler: () => {
+    return new Promise((resolve) => {
+      resolve(true);
+      console.log("test 1");
+    });
+  },
+  interval: 12
+};
