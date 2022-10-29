@@ -46,6 +46,10 @@ const test = new Queue([
   },
 ]);
 
+test.on("pending", (data: any) => {
+  console.log("pending", data);
+})
+
 test.on("status", (data: any) => {
   console.log("status", data);
 })

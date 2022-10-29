@@ -48,8 +48,6 @@ class Queue {
   private clock() {
     const time = this.seconds;
 
-    console.log(time);
-
     for (let i = 0; i < this.queue.length; i++) {
       const task: Task = this.queue[i];
 
