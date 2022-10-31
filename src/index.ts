@@ -45,7 +45,7 @@ class Queue {
     return new Date().getTime();
   }
 
-  private clock() {
+  private tick() {
     const time = this.seconds;
 
     for (let i = 0; i < this.queue.length; i++) {
@@ -170,7 +170,7 @@ class Queue {
 
     const milliseconds = new Date().getMilliseconds();
     setTimeout(() => {
-      this.interval = setInterval(() => this.clock(), 1000);
+      this.interval = setInterval(() => this.tick(), 1000);
     }, 1000 - milliseconds);
   }
 
