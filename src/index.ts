@@ -49,7 +49,7 @@ class Queue {
   private process(task: Task, index: number) {
     const { id, handler, insight } = task;
 
-    if (!handler) return;
+    if (typeof handler !== "function") return;
 
     this.queue[index].pending = true;
 
