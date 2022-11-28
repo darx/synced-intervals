@@ -17,6 +17,7 @@ interface Task {
   interval?: undefined | IntRange<1, 59>;
   immediate?: boolean;
   insight?: boolean;
+  controller?: AbortController;
 }
 
 interface Event {
@@ -45,58 +46,65 @@ class Queue {
     return new Date().getTime();
   }
 
+  private process(task: Task, index: number) {
+    const { id, handler, insight } = task;
+
+    if (!handler) return;
+
+    this.queue[index].pending = true;
+
+    if (this.isEvent("pending")) {
+      this.emit("pending", this.pending);
+    }
+
+    let track: number | null = !insight ? null : this.now;
+
+    const running = handler.apply(null, []);
+
+    running
+      .then((content: any) => {
+        if (!insight) return;
+
+        content =
+          typeof content === "object"
+            ? JSON.stringify(content)
+            : String(content);
+
+        const size = content.length;
+        const speed = size / ((this.now - Number(track)) / 1000) / 1024;
+
+        track = null;
+
+        this.tracking.push(Number(speed.toFixed(4)));
+      })
+      .finally(() => {
+        this.queue[index].pending = false;
+
+        if (this.isEvent("pending")) {
+          this.emit("pending", this.pending);
+        }
+
+        if (insight && track)
+          this.tracking.unshift((this.now - Number(track)) / 1000);
+        if (this.tracking.length >= 100) this.tracking.pop();
+
+        if (!this.isInterval(task)) return this.remove(id);
+      });
+  }
+
   private tick() {
     const time = this.seconds;
 
     for (let i = 0; i < this.queue.length; i++) {
       const task: Task = this.queue[i];
-
-      const { id, handler, pending, interval, insight } = task;
+      const { id, pending, interval } = task;
 
       if (pending === true) continue;
 
       if (typeof interval === "number" && time % interval !== 0) continue;
       if (typeof interval !== "number" && this.isPending(id)) continue;
 
-      this.queue[i].pending = true;
-
-      if (this.isEvent("pending")) {
-        this.emit("pending", this.pending);
-      }
-
-      let track: number | null = !insight ? null : this.now;
-
-      const running = handler.apply(null, []);
-
-      running
-        .then((content: any) => {
-          if (!insight) return;
-
-          content =
-            typeof content === "object"
-              ? JSON.stringify(content)
-              : String(content);
-
-          const size = content.length;
-          const speed = size / ((this.now - Number(track)) / 1000) / 1024;
-
-          track = null;
-
-          this.tracking.push(Number(speed.toFixed(4)));
-        })
-        .finally(() => {
-          this.queue[i].pending = false;
-
-          if (this.isEvent("pending")) {
-            this.emit("pending", this.pending);
-          }
-
-          if (insight && track)
-            this.tracking.unshift((this.now - Number(track)) / 1000);
-          if (this.tracking.length >= 100) this.tracking.pop();
-
-          if (!this.isInterval(task)) return this.remove(id);
-        });
+      this.process(task, i);
     }
 
     if (this.isEvent("status") && time % 15 === 0) {
@@ -112,7 +120,7 @@ class Queue {
   }
 
   private isPending(id: number | string): boolean {
-    return this.queue.some((x) => x.id === id && x.pending);
+    return this.queue.some((x: Task) => x.id === id && x.pending);
   }
 
   private isInterval(x: Task): boolean {
@@ -120,11 +128,11 @@ class Queue {
   }
 
   private inQueue(id: number | string): boolean {
-    return this.queue.some((x) => x.id === id);
+    return this.queue.some((x: Task) => x.id === id);
   }
 
   private isEvent(name: string): boolean {
-    return this.events.some((x) => x.event === name);
+    return this.events.some((x: Event) => x.event === name);
   }
 
   private average(arr: Array<number> = []): number {
@@ -150,11 +158,11 @@ class Queue {
   }
 
   get pending(): Array<Task> {
-    return this.queue.filter((x) => x.pending);
+    return this.queue.filter((x: Task) => x.pending);
   }
 
   remove(id: number | string) {
-    const index: number = this.queue.findIndex((x) => x.id === id);
+    const index: number = this.queue.findIndex((x: Task) => x.id === id);
     if (index === -1) return;
     this.queue.splice(index, 1);
   }
