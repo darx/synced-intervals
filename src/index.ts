@@ -51,7 +51,7 @@ class Queue {
 
     if (typeof handler !== "function") return;
 
-    this.queue[index].pending = true;
+    if (this.queue[index]) this.queue[index].pending = true;
 
     if (this.isEvent("pending")) {
       this.emit("pending", this.pending);
@@ -78,7 +78,7 @@ class Queue {
         this.tracking.push(Number(speed.toFixed(4)));
       })
       .finally(() => {
-        this.queue[index].pending = false;
+        if (this.queue[index]) this.queue[index].pending = false;
 
         if (this.isEvent("pending")) {
           this.emit("pending", this.pending);
@@ -159,6 +159,10 @@ class Queue {
 
   get pending(): Array<Task> {
     return this.queue.filter((x: Task) => x.pending);
+  }
+
+  includes(id: number | string): Boolean {
+    return this.queue.some((x: Task) => x.id == id);
   }
 
   remove(id: number | string) {

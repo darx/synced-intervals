@@ -1,16 +1,26 @@
 {
-  "name": "taskqueue",
+  "name": "system-clock-sync-intervals",
   "version": "0.0.1",
-  "main": "src/index.js",
+  "main": "./dist/cjs/index.js",
   "scripts": {
     "tsc": "tsc",
     "watch": "tsc -w",
-    "test": "tsc -p test && node test/test.js"
+    "test": "tsc -p test && node test/test.js",
+    "build": "tsc --project tsconfig.esm.json & tsc --project tsconfig.cjs.json"
   },
   "devDependencies": {
     "@types/node": "^18.11.7",
     "dotenv": "^16.0.3",
     "typescript": "^4.8.4"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "default": "./dist/esm/index.js",
+      "types": "./dist/types/index.d.ts"
+    },
+    "./package.json": "./package.json"
   },
   "repository": {
     "type": "git",
@@ -21,5 +31,8 @@
   "bugs": {
     "url": "https://github.com/darx/TaskQueue/issues"
   },
-  "homepage": "https://github.com/darx/TaskQueue#readme"
+  "homepage": "https://github.com/darx/TaskQueue#readme",
+  "files": [
+    "dist/"
+  ]
 }
