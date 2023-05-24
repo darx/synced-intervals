@@ -1,5 +1,5 @@
 {
-  "name": "system-clock-sync-intervals",
+  "name": "synced-intervals",
   "version": "0.0.1",
   "main": "./dist/cjs/index.js",
   "scripts": {
@@ -24,14 +24,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/darx/TaskQueue.git"
+    "url": "git+https://github.com/darx/synced-intervals.git"
   },
   "author": "Synthetix",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/darx/TaskQueue/issues"
+    "url": "https://github.com/darx/synced-intervals/issues"
   },
-  "homepage": "https://github.com/darx/TaskQueue#readme",
+  "homepage": "https://github.com/darx/synced-intervals#readme",
   "files": [
     "dist/"
   ]
